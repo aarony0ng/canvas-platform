@@ -1,0 +1,15 @@
+[build]
+builder = "nixpacks"
+
+# Railway detects each service from the services directory
+# Deploy backend and frontend as separate Railway services.
+# Set the following environment variables in Railway's dashboard:
+#
+#  DATABASE_URL       — provided automatically by Railway Postgres plugin
+#  REDIS_URL          — provided automatically by Railway Redis plugin
+#  TOKEN_ENCRYPTION_KEY — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+#  SESSION_SECRET_KEY — generate with: python -c "import secrets; print(secrets.token_hex(32))"
+#  SENDGRID_API_KEY   — from sendgrid.com
+#  EMAIL_FROM         — your verified sender address
+#  APP_URL            — your frontend Railway domain (e.g. https://canvas-checker.up.railway.app)
+#  ENVIRONMENT        — production

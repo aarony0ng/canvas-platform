@@ -1,0 +1,14 @@
+# Credentials
+backend/.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.venv/
+
+# OS
+.DS_Store

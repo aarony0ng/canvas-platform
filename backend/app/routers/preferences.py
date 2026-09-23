@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 
 from app.database import get_db
 from app import models
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/preferences", tags=["preferences"])
 class PreferencesUpdate(BaseModel):
     email_enabled:  Optional[bool]    = None
     push_enabled:   Optional[bool]    = None
-    lead_hours:     Optional[list[int]] = None
+    lead_hours:     Optional[List[int]] = None
     digest_mode:    Optional[bool]    = None
     run_hour:       Optional[int]     = None
     timezone:       Optional[str]     = None

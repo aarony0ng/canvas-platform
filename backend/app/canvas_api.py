@@ -99,7 +99,7 @@ def validate_token(base_url: str, token: str) -> dict:
     return results[0]
 
 
-def get_active_courses(base_url: str, token: str) -> list[dict]:
+def get_active_courses(base_url: str, token: str) -> list:
     courses = _get(
         base_url, token,
         "/courses?enrollment_state=active&enrollment_type=student&state[]=available"
@@ -107,7 +107,7 @@ def get_active_courses(base_url: str, token: str) -> list[dict]:
     return [c for c in courses if isinstance(c, dict) and c.get("id")]
 
 
-def get_upcoming_assignments(base_url: str, token: str, course_id: int) -> list[dict]:
+def get_upcoming_assignments(base_url: str, token: str, course_id: int) -> list:
     assignments = _get(
         base_url, token,
         f"/courses/{course_id}/assignments?bucket=upcoming&order_by=due_at"
@@ -115,7 +115,7 @@ def get_upcoming_assignments(base_url: str, token: str, course_id: int) -> list[
     return [a for a in assignments if isinstance(a, dict) and a.get("due_at")]
 
 
-def get_all_upcoming(base_url: str, token: str) -> list[dict]:
+def get_all_upcoming(base_url: str, token: str) -> list:
     """Return all upcoming assignments across active courses, sorted by due date."""
     courses = get_active_courses(base_url, token)
     now = datetime.now(timezone.utc)
@@ -143,7 +143,7 @@ def get_all_upcoming(base_url: str, token: str) -> list[dict]:
     return results
 
 
-def assignments_due_within(base_url: str, token: str, hours: int) -> list[dict]:
+def assignments_due_within(base_url: str, token: str, hours: int) -> list:
     """Return assignments due within `hours` hours from now."""
     all_upcoming = get_all_upcoming(base_url, token)
     cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)

@@ -24,6 +24,7 @@ export const api = {
     signup:         (body) => api.post('/auth/signup', body),
     login:          (body) => api.post('/auth/login', body),
     logout:         ()     => api.post('/auth/logout'),
+    verifyEmail:    (token) => api.get(`/auth/verify-email?token=${encodeURIComponent(token)}`),
     forgotPassword: (body) => api.post('/auth/forgot-password', body),
     deleteAccount:  ()     => api.delete('/auth/account'),
   },

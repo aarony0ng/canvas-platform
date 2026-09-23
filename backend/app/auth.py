@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 
 from passlib.context import CryptContext
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from typing import Optional
 from fastapi import Cookie, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 
@@ -58,7 +59,7 @@ def generate_token() -> str:
 # ── Current user dependency ───────────────────────────────────────────────────
 
 def get_current_user(
-    session: str | None = Cookie(default=None, alias=SESSION_COOKIE),
+    session: Optional[str] = Cookie(default=None, alias=SESSION_COOKIE),
     db: Session = Depends(get_db),
 ) -> models.User:
     if not session:

@@ -69,7 +69,7 @@ def send_password_reset_email(to_email: str, reset_url: str) -> None:
 
 def send_assignment_notification(
     to_email: str,
-    assignments: list[dict],
+    assignments: list,
     lead_hours: int,
 ) -> None:
     if not assignments:

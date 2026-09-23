@@ -8,6 +8,7 @@ pydantic-settings==2.2.1
 python-multipart==0.0.9
 cryptography==42.0.7
 passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
 itsdangerous==2.2.0
 celery[redis]==5.4.0
 redis==5.0.4

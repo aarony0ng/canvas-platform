@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { api } from './api'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import VerifyEmail from './pages/VerifyEmail'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import Layout from './components/Layout'
@@ -36,8 +37,9 @@ export default function App() {
   return (
     <AuthContext.Provider value={{ user, setUser, logout, loading }}>
       <Routes>
-        <Route path="/login"  element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login"        element={<Login />} />
+        <Route path="/signup"       element={<Signup />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/" element={
           <RequireAuth>
             <Layout>

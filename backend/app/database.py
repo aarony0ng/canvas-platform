@@ -5,7 +5,8 @@ from app.config import get_settings
 
 def get_engine():
     settings = get_settings()
-    return create_engine(settings.database_url, pool_pre_ping=True)
+    url = settings.database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return create_engine(url, pool_pre_ping=True)
 
 
 engine = get_engine()

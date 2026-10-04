@@ -14,7 +14,15 @@ class Settings(BaseSettings):
     email_from_name: str = "Canvas Checker"
 
     app_url: str = "http://localhost:5173"
+    extra_origins: str = ""
     environment: str = "development"
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        origins = [self.app_url]
+        if self.extra_origins:
+            origins += [o.strip() for o in self.extra_origins.split(",")]
+        return origins
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

@@ -42,6 +42,7 @@ export const api = {
   },
 
   assignments: {
-    upcoming: () => api.get('/assignments/upcoming'),
+    upcoming:  () => api.get('/assignments/upcoming'),
+    testEmail: () => api.post('/assignments/test-email'),
   },
 }

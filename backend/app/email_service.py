@@ -70,12 +70,21 @@ def send_password_reset_email(to_email: str, reset_url: str) -> None:
 def send_assignment_notification(
     to_email: str,
     assignments: list,
-    lead_hours: int,
+    lead_hours: int | None,
 ) -> None:
     if not assignments:
         return
 
-    label = f"{lead_hours} hour{'s' if lead_hours != 1 else ''}"
+    if lead_hours is None:
+        label = "upcoming"
+    elif lead_hours % 168 == 0:
+        w = lead_hours // 168
+        label = f"{w} week{'s' if w != 1 else ''}"
+    elif lead_hours % 24 == 0:
+        d = lead_hours // 24
+        label = f"{d} day{'s' if d != 1 else ''}"
+    else:
+        label = f"{lead_hours} hour{'s' if lead_hours != 1 else ''}"
 
     rows = ""
     for a in assignments:
@@ -85,12 +94,15 @@ def send_assignment_notification(
         rows += f"<tr><td>{link}{pts}</td><td>{a['course_name']}</td><td>{due}</td></tr>"
 
     count = len(assignments)
-    subject = (
-        f"{count} assignment{'s' if count != 1 else ''} due in {label}"
-    )
+    if lead_hours is None:
+        subject = f"Your upcoming assignments — Canvas Checker"
+        heading = "Canvas Checker — Upcoming Assignments"
+    else:
+        subject = f"{count} assignment{'s' if count != 1 else ''} due in {label}"
+        heading = f"Canvas Checker — Due in {label}"
 
     html = f"""
-    <h2 style="font-family:sans-serif">Canvas Checker — Due in {label}</h2>
+    <h2 style="font-family:sans-serif">{heading}</h2>
     <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px">
       <thead>
         <tr style="background:#f5f5f5">

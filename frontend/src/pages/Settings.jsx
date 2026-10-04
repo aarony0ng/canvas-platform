@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../api'
 import { useAuth } from '../App'
 
@@ -137,9 +137,24 @@ function UrlHelp() {
   )
 }
 
+const PRESETS = [
+  { label: '24 hours', hours: 24 },
+  { label: '2 days',   hours: 48 },
+  { label: '1 week',   hours: 168 },
+]
+
 function LeadHoursPicker({ value, onChange }) {
   const [inputVal, setInputVal] = useState(1)
   const [inputUnit, setInputUnit] = useState('days')
+
+  const toggle = (h) => {
+    if (value.includes(h)) {
+      if (value.length <= 1) return
+      onChange(value.filter(x => x !== h))
+    } else {
+      onChange([...value, h].sort((a, b) => a - b))
+    }
+  }
 
   const add = () => {
     const hours = displayToHours(Number(inputVal), inputUnit)
@@ -153,22 +168,47 @@ function LeadHoursPicker({ value, onChange }) {
     onChange(value.filter(x => x !== h))
   }
 
+  const customValues = value.filter(h => !PRESETS.some(p => p.hours === h))
+
   return (
     <div>
       <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 10 }}>Notify me this far in advance</div>
 
-      {/* Current chips */}
+      {/* Presets */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-        {value.map(h => (
-          <span key={h} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: 20,
-            border: '1px solid var(--accent)',
-            background: 'var(--accent-bg)',
-            color: 'var(--accent)', fontSize: 13, fontWeight: 500,
-          }}>
-            {formatLeadLabel(h)}
-            {value.length > 1 && (
+        {PRESETS.map(({ label, hours }) => {
+          const active = value.includes(hours)
+          return (
+            <button
+              key={hours}
+              type="button"
+              onClick={() => toggle(hours)}
+              style={{
+                padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+                border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                background: active ? 'var(--accent-bg)' : 'transparent',
+                color: active ? 'var(--accent)' : 'var(--ink-2)',
+                fontSize: 13, fontWeight: active ? 500 : 400,
+              }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Custom chips (non-preset values) */}
+      {customValues.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+          {customValues.map(h => (
+            <span key={h} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '5px 12px', borderRadius: 20,
+              border: '1px solid var(--accent)',
+              background: 'var(--accent-bg)',
+              color: 'var(--accent)', fontSize: 13, fontWeight: 500,
+            }}>
+              {formatLeadLabel(h)}
               <button
                 type="button"
                 onClick={() => remove(h)}
@@ -177,12 +217,12 @@ function LeadHoursPicker({ value, onChange }) {
                   color: 'var(--accent)', fontSize: 14, lineHeight: 1, opacity: 0.7,
                 }}
               >×</button>
-            )}
-          </span>
-        ))}
-      </div>
+            </span>
+          ))}
+        </div>
+      )}
 
-      {/* Add new */}
+      {/* Custom input */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <input
           type="number" min="1" max="999"
@@ -205,7 +245,7 @@ function LeadHoursPicker({ value, onChange }) {
           className="btn-ghost"
           style={{ fontSize: 13, padding: '7px 14px' }}
         >
-          + Add
+          + Custom
         </button>
       </div>
     </div>
@@ -224,6 +264,8 @@ export default function Settings() {
   const [prefs, setPrefs] = useState(null)
   const [prefsMsg, setPrefsMsg] = useState('')
   const [prefsLoading, setPrefsLoading] = useState(false)
+  const [testMsg, setTestMsg] = useState('')
+  const [testLoading, setTestLoading] = useState(false)
 
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [deleteError, setDeleteError] = useState('')
@@ -267,6 +309,18 @@ export default function Settings() {
       setPrefsMsg('')
     } finally {
       setPrefsLoading(false)
+    }
+  }
+
+  const sendTestEmail = async () => {
+    setTestMsg(''); setTestLoading(true)
+    try {
+      const res = await api.assignments.testEmail()
+      setTestMsg(res.message)
+    } catch (err) {
+      setTestMsg(err.message)
+    } finally {
+      setTestLoading(false)
     }
   }
 
@@ -368,6 +422,25 @@ export default function Settings() {
               >
                 {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
               </select>
+            </div>
+          </div>
+          <hr className="divider" style={{ margin: 0 }} />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Test your notifications</div>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 12 }}>
+              Send yourself an email right now with your current upcoming assignments.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={sendTestEmail}
+                disabled={testLoading}
+                style={{ fontSize: 13 }}
+              >
+                {testLoading ? 'Sending…' : '✉ Send test email'}
+              </button>
+              {testMsg && <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{testMsg}</span>}
             </div>
           </div>
           {prefsMsg && <p className="success-msg">{prefsMsg}</p>}

@@ -72,7 +72,10 @@ def signup(body: SignupRequest, db: Session = Depends(get_db)):
 
     settings = get_settings()
     verify_url = f"{settings.app_url}/verify-email?token={verify_token}"
-    send_verification_email(body.email, verify_url)
+    try:
+        send_verification_email(body.email, verify_url)
+    except Exception as e:
+        print(f"[EMAIL ERROR] Failed to send verification email: {e}")
     return {"message": "Account created. Check your email to verify."}
 
 

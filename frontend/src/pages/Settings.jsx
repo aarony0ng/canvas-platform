@@ -2,13 +2,6 @@ import { useState, useEffect } from 'react'
 import { api } from '../api'
 import { useAuth } from '../App'
 
-const LEAD_OPTIONS = [
-  { value: 24,  label: '24 hours before' },
-  { value: 48,  label: '48 hours before' },
-  { value: 72,  label: '72 hours before' },
-  { value: 168, label: '1 week before' },
-]
-
 const TIMEZONES = [
   'America/New_York', 'America/Chicago', 'America/Denver',
   'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu',
@@ -16,6 +9,23 @@ const TIMEZONES = [
   'Europe/Paris', 'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata',
   'Australia/Sydney',
 ]
+
+function hoursToDisplay(h) {
+  if (h % 168 === 0) return { value: h / 168, unit: 'weeks' }
+  if (h % 24 === 0)  return { value: h / 24,  unit: 'days' }
+  return { value: h, unit: 'hours' }
+}
+
+function displayToHours(value, unit) {
+  if (unit === 'weeks') return value * 168
+  if (unit === 'days')  return value * 24
+  return value
+}
+
+function formatLeadLabel(h) {
+  const { value, unit } = hoursToDisplay(h)
+  return `${value} ${value === 1 ? unit.slice(0, -1) : unit} before`
+}
 
 function Section({ title, children }) {
   return (
@@ -41,25 +51,163 @@ function Toggle({ label, description, checked, onChange }) {
         role="switch" aria-checked={checked}
         onClick={() => onChange(!checked)}
         style={{
-          flexShrink: 0,
-          width: 40, height: 22,
-          borderRadius: 11,
+          flexShrink: 0, width: 40, height: 22, borderRadius: 11,
           background: checked ? 'var(--accent)' : 'var(--border)',
-          border: 'none',
-          padding: 0,
-          position: 'relative',
-          transition: 'background 0.15s',
+          border: 'none', padding: 0, position: 'relative', transition: 'background 0.15s', cursor: 'pointer',
         }}
       >
         <span style={{
-          position: 'absolute',
-          top: 2, left: checked ? 20 : 2,
+          position: 'absolute', top: 2, left: checked ? 20 : 2,
           width: 18, height: 18, borderRadius: '50%',
-          background: '#fff',
-          transition: 'left 0.15s',
-          display: 'block',
+          background: '#fff', transition: 'left 0.15s', display: 'block',
         }} />
       </button>
+    </div>
+  )
+}
+
+function TokenGuide() {
+  const [open, setOpen] = useState(false)
+  const steps = [
+    'Log in to your Canvas account in a new tab.',
+    'Click your profile picture in the top-right corner → select Account → Settings.',
+    'Scroll down to the "Approved Integrations" section.',
+    'Click "+ New Access Token".',
+    'Set the Purpose to "Canvas Checker" and leave Expires blank.',
+    'Click Generate Token, then copy the full token and paste it in the field above.',
+  ]
+  return (
+    <div style={{ marginTop: 4 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: 'none', border: 'none', padding: 0,
+          color: 'var(--accent)', fontSize: 12, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}
+      >
+        <span style={{ fontSize: 11 }}>{open ? '▾' : '▸'}</span>
+        How do I generate a Canvas API token?
+      </button>
+      {open && (
+        <ol style={{ margin: '10px 0 0 0', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {steps.map((step, i) => (
+            <li key={i} style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>{step}</li>
+          ))}
+        </ol>
+      )}
+    </div>
+  )
+}
+
+function UrlHelp() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ marginTop: 4 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: 'none', border: 'none', padding: 0,
+          color: 'var(--accent)', fontSize: 12, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}
+      >
+        <span style={{ fontSize: 11 }}>{open ? '▾' : '▸'}</span>
+        How do I find my Canvas URL?
+      </button>
+      {open && (
+        <div style={{ marginTop: 10, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+          <p style={{ marginBottom: 8 }}>
+            Your Canvas URL is the domain you visit to log in to Canvas — just the base address, no path after it.
+          </p>
+          <p style={{ marginBottom: 6, fontWeight: 500 }}>Common examples:</p>
+          <ul style={{ paddingLeft: 18, margin: '0 0 8px 0', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <li>Columbia University: <code style={{ fontSize: 12, background: 'var(--border)', padding: '1px 5px', borderRadius: 4 }}>https://canvas.columbia.edu</code></li>
+            <li>Canvas default: <code style={{ fontSize: 12, background: 'var(--border)', padding: '1px 5px', borderRadius: 4 }}>https://canvas.instructure.com</code></li>
+            <li>Many schools: <code style={{ fontSize: 12, background: 'var(--border)', padding: '1px 5px', borderRadius: 4 }}>https://canvas.[yourschool].edu</code></li>
+          </ul>
+          <p style={{ color: 'var(--ink-3)' }}>
+            Tip: open Canvas in your browser, copy everything up to (but not including) the first <code style={{ fontSize: 12 }}>/</code> after the domain.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LeadHoursPicker({ value, onChange }) {
+  const [inputVal, setInputVal] = useState(1)
+  const [inputUnit, setInputUnit] = useState('days')
+
+  const add = () => {
+    const hours = displayToHours(Number(inputVal), inputUnit)
+    if (!hours || hours < 1) return
+    if (value.includes(hours)) return
+    onChange([...value, hours].sort((a, b) => a - b))
+  }
+
+  const remove = (h) => {
+    if (value.length <= 1) return
+    onChange(value.filter(x => x !== h))
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 10 }}>Notify me this far in advance</div>
+
+      {/* Current chips */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        {value.map(h => (
+          <span key={h} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 12px', borderRadius: 20,
+            border: '1px solid var(--accent)',
+            background: 'var(--accent-bg)',
+            color: 'var(--accent)', fontSize: 13, fontWeight: 500,
+          }}>
+            {formatLeadLabel(h)}
+            {value.length > 1 && (
+              <button
+                type="button"
+                onClick={() => remove(h)}
+                style={{
+                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                  color: 'var(--accent)', fontSize: 14, lineHeight: 1, opacity: 0.7,
+                }}
+              >×</button>
+            )}
+          </span>
+        ))}
+      </div>
+
+      {/* Add new */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="number" min="1" max="999"
+          value={inputVal}
+          onChange={e => setInputVal(e.target.value)}
+          style={{ width: 70, marginBottom: 0 }}
+        />
+        <select
+          value={inputUnit}
+          onChange={e => setInputUnit(e.target.value)}
+          style={{ width: 110, marginBottom: 0 }}
+        >
+          <option value="hours">hours</option>
+          <option value="days">days</option>
+          <option value="weeks">weeks</option>
+        </select>
+        <button
+          type="button"
+          onClick={add}
+          className="btn-ghost"
+          style={{ fontSize: 13, padding: '7px 14px' }}
+        >
+          + Add
+        </button>
+      </div>
     </div>
   )
 }
@@ -67,19 +215,16 @@ function Toggle({ label, description, checked, onChange }) {
 export default function Settings() {
   const { user, logout } = useAuth()
 
-  // Canvas token
   const [tokenStatus, setTokenStatus] = useState(null)
   const [tokenForm, setTokenForm] = useState({ canvas_base_url: '', api_token: '' })
   const [tokenMsg, setTokenMsg] = useState('')
   const [tokenError, setTokenError] = useState('')
   const [tokenLoading, setTokenLoading] = useState(false)
 
-  // Preferences
   const [prefs, setPrefs] = useState(null)
   const [prefsMsg, setPrefsMsg] = useState('')
   const [prefsLoading, setPrefsLoading] = useState(false)
 
-  // Danger zone
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [deleteError, setDeleteError] = useState('')
 
@@ -118,20 +263,11 @@ export default function Settings() {
       await api.prefs.update({ [key]: value })
       setPrefsMsg('Saved.')
       setTimeout(() => setPrefsMsg(''), 2000)
-    } catch (err) {
+    } catch {
       setPrefsMsg('')
     } finally {
       setPrefsLoading(false)
     }
-  }
-
-  const toggleLeadHour = (hours) => {
-    const current = prefs.lead_hours || [24]
-    const next = current.includes(hours)
-      ? current.filter(h => h !== hours)
-      : [...current, hours].sort((a, b) => a - b)
-    if (next.length === 0) return
-    updatePref('lead_hours', next)
   }
 
   const handleDeleteAccount = async () => {
@@ -161,19 +297,21 @@ export default function Settings() {
             <button className="btn-ghost" style={{ fontSize: 13 }} onClick={removeToken}>
               Disconnect token
             </button>
+            {tokenMsg && <p className="success-msg" style={{ marginTop: 10 }}>{tokenMsg}</p>}
           </div>
         ) : (
-          <form onSubmit={saveToken} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <form onSubmit={saveToken} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label>Canvas URL</label>
               <input
-                type="url" placeholder="https://canvas.instructure.com" required
+                type="url" placeholder="https://canvas.columbia.edu" required
                 value={tokenForm.canvas_base_url}
                 onChange={e => setTokenForm(f => ({ ...f, canvas_base_url: e.target.value }))}
               />
               <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>
-                Your institution's Canvas base URL — just the domain, no path.
+                Your school's Canvas domain — just the base URL, no path (e.g. <code style={{ fontSize: 11 }}>https://canvas.columbia.edu</code>).
               </p>
+              <UrlHelp />
             </div>
             <div>
               <label>API Token</label>
@@ -182,9 +320,7 @@ export default function Settings() {
                 value={tokenForm.api_token}
                 onChange={e => setTokenForm(f => ({ ...f, api_token: e.target.value }))}
               />
-              <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>
-                Canvas → Account → Settings → Approved Integrations → New Access Token
-              </p>
+              <TokenGuide />
             </div>
             {tokenError && <p className="error-msg">{tokenError}</p>}
             {tokenMsg   && <p className="success-msg">{tokenMsg}</p>}
@@ -193,7 +329,6 @@ export default function Settings() {
             </button>
           </form>
         )}
-        {tokenMsg && tokenStatus?.connected && <p className="success-msg">{tokenMsg}</p>}
       </Section>
 
       {/* Notification Preferences */}
@@ -206,32 +341,10 @@ export default function Settings() {
             onChange={v => updatePref('email_enabled', v)}
           />
           <hr className="divider" style={{ margin: 0 }} />
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 10 }}>Notify me this far in advance</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {LEAD_OPTIONS.map(opt => {
-                const active = (prefs.lead_hours || [24]).includes(opt.value)
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => toggleLeadHour(opt.value)}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: 20,
-                      border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-                      background: active ? 'var(--accent-bg)' : 'transparent',
-                      color: active ? 'var(--accent)' : 'var(--ink-2)',
-                      fontSize: 13,
-                      fontWeight: active ? 500 : 400,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <LeadHoursPicker
+            value={prefs.lead_hours || [24]}
+            onChange={v => updatePref('lead_hours', v)}
+          />
           <hr className="divider" style={{ margin: 0 }} />
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 140 }}>
@@ -266,8 +379,7 @@ export default function Settings() {
         <div>
           <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Delete account</div>
           <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 14 }}>
-            Permanently deletes your account, Canvas token, and all notification history.
-            This cannot be undone.
+            Permanently deletes your account, Canvas token, and all notification history. This cannot be undone.
           </p>
           <input
             placeholder='Type "delete my account" to confirm'

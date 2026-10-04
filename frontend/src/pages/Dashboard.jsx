@@ -75,13 +75,65 @@ export default function Dashboard() {
   if (loading) return <p style={{ color: 'var(--ink-3)' }}>Fetching your assignments…</p>
 
   if (error?.includes('Canvas token')) return (
-    <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-      <div style={{ fontSize: 28, marginBottom: 12 }}>🔗</div>
-      <h2 style={{ fontWeight: 600, marginBottom: 8 }}>Connect your Canvas account</h2>
-      <p style={{ fontSize: 14, color: 'var(--ink-2)', marginBottom: 20 }}>
-        Add your Canvas API token in Settings to start receiving assignment reminders.
-      </p>
-      <Link to="/settings"><button className="btn-primary">Go to Settings</button></Link>
+    <div>
+      <h1 style={{ fontWeight: 600, fontSize: 20, marginBottom: 24 }}>Get started</h1>
+      <div className="card" style={{ padding: 32, marginBottom: 16 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 20 }}>
+          Setup checklist
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {[
+            {
+              n: 1,
+              title: 'Connect your Canvas account',
+              desc: 'Add your school\'s Canvas URL and generate an API token so we can fetch your assignments.',
+              done: false,
+            },
+            {
+              n: 2,
+              title: 'Set your notification preferences',
+              desc: 'Choose how far in advance you want reminders and what time to check each day.',
+              done: false,
+            },
+            {
+              n: 3,
+              title: 'You\'re all set',
+              desc: 'Your upcoming assignments will appear here and you\'ll get email reminders automatically.',
+              done: false,
+            },
+          ].map((step, i) => (
+            <div key={i} style={{
+              display: 'flex', gap: 16, alignItems: 'flex-start',
+              paddingBottom: i < 2 ? 20 : 0,
+              marginBottom: i < 2 ? 20 : 0,
+              borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
+            }}>
+              <div style={{
+                flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
+                background: i === 0 ? 'var(--accent)' : 'var(--border)',
+                color: i === 0 ? '#fff' : 'var(--ink-3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 600,
+              }}>
+                {step.n}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3, color: i === 0 ? 'var(--ink)' : 'var(--ink-3)' }}>
+                  {step.title}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>{step.desc}</div>
+                {i === 0 && (
+                  <Link to="/settings">
+                    <button className="btn-primary" style={{ marginTop: 14, fontSize: 13 }}>
+                      Connect Canvas →
+                    </button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 
